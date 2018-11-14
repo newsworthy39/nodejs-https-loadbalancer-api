@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-api",
+  "version": "1.0.0",
+  "description": "Nodejs API for golang-https-accelerator",
+  "main": "node.js",
+  "dependencies": {
+    "hashmap": "^2.3.0",
+    "httpdispatcher": "^2.1.2",
+    "mysql": "^2.16.0",
+    "querystring": "^0.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nodejs",
+    "golang"
+  ],
+  "author": "newsworthy39",
+  "license": "MIT"
+}
