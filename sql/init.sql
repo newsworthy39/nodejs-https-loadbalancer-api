@@ -56,7 +56,7 @@ CREATE TABLE `context_loadbalancer` (
   `contextid` int(11) NOT NULL,
   `loadbalancerid` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -71,9 +71,8 @@ CREATE TABLE `context_loadbalancer_permissions` (
   `context_loadbalancerid` int(11) NOT NULL,
   `permissionkey` varchar(255) NOT NULL DEFAULT '',
   `permissiondata` text NOT NULL,
-  `permissionpath` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +103,7 @@ CREATE TABLE `loadbalancer_routes` (
   `lbid` varchar(64) DEFAULT NULL,
   `backend` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -116,4 +115,4 @@ CREATE TABLE `loadbalancer_routes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-15 10:12:47
+-- Dump completed on 2018-11-15 20:23:50

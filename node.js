@@ -263,7 +263,6 @@ map.set(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res
 map.set(new RegExp("/loadbalancer$"), function(req, res) {
 
 	try {
-
 		// 
 		// method: 'round-robin',
 		// path: 'http://test.api.dk',
@@ -293,8 +292,8 @@ map.set(new RegExp("/loadbalancer$"), function(req, res) {
 		});
 
 	}catch (err) {
-		res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-		res.end("No loadbalancers found.\n" + err);
+		res.writeHead(500, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end("Server error: " + err + ".\n");
 
 	}
 

@@ -170,7 +170,7 @@ function PopulateRoutesInLoadbalancer(results, done, count, length) {
 			console.log("Looking up backends for lb {0}, count {1}".format(results.id, count));
 		}
 
-		var sql = "select backend from loadbalancer_routes where lbid = {0}".format(results.id);
+		var sql = "select id, backend from loadbalancer_routes where lbid = {0}".format(results.id);
 		con.query(sql, function (err, result) {
 			results.expect = count;
 
