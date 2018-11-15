@@ -30,11 +30,8 @@ function remove(str, chars) {
   return str.replace(new RegExp(`[${chars}]`, 'g'), '');
 }
 
-function bodyparser (request, response, next, method = ["POST"]) {
-
-    console.log(method + " vs " + request.method);
-
-    if (method.includes(request.method)) {
+function bodyparser (request, response, next, middleware) {
+    if (["POST","PUT","DELETE"].includes(request.method)) {
         var body = '';
 
         request.on('data', function (data) {
@@ -57,12 +54,10 @@ function bodyparser (request, response, next, method = ["POST"]) {
 		    copy.set(key.toLowerCase(), value);
 	    };
 	    request.post = copy;
-    	    next(request, response);
+    	    next(request, response, middleware);
         });
     } else {
-	response.writeHead(501, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-	response.end("Unsupported operation");
-	return;
+	    next(request, response, middleware);
     }
 }
 
@@ -97,20 +92,90 @@ function isAuthenticated(req, res, next) {
 			});
 		} else {
 			res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-			res.end("Missing headers");
+			res.end("Missing headers\n");
 
 		}
 	} catch(err) {
 		res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-		res.end("Not authorized, missing headers" + err);
+		res.end("Not authorized, missing headers\n" + err);
 	}
 }
 
-//A sample GET request
-map.set(new RegExp("/loadbalancer/(\\d)+/backends"), function ( req, res) {
+map.set(new RegExp("/loadbalancer/(\\d)+/backends$"), function (req, res) {
+	try {
 
-	return bodyparser(req, res, function (req, res){
+		const { headers } = req;
+		var contextid = req.contextid;
+		var loadbalancerid = req.matches[1];
+		var backend = req.post.get("backend");
 
+	        if (!backend) {
+			res.writeHead(400, {'Content-Type': 'text/plain','X-ServedBy': IP + ":" + PORT });
+			res.end("No backend posted (format: json{ backend: http://www.dr.dk }.\n");
+
+			return
+		}
+		
+		if (req.method != "POST") {
+			res.writeHead(400, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+			res.end("Wrong HTTP Method. Use POST.\n");
+		}
+
+    		// function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) 
+                api.GetLoadbalancerPermissions(contextid, [ req.method ], loadbalancerid, function(result, err) {
+
+                        if (!result && !err) {
+                                res.writeHead(401, {'Content-Type': 'text/plain',
+                                                        'X-ServedBy': IP + ":" + PORT });
+                                res.end("No such loadbalancer.\n");
+
+                                return;
+                        }
+
+                        if (err && !result) {
+                                res.writeHead(401, {'Content-Type': 'text/plain',
+                                                        'X-ServedBy': IP + ":" + PORT });
+                                res.end("Permission denied.\n");
+
+                                return;
+
+                        }
+
+                        if (result[0].permissiondata == "DENY") {
+                                res.writeHead(401, {'Content-Type': 'text/plain',
+                                                        'X-ServedBy': IP + ":" + PORT });
+                                res.end("Permission denied.\n");
+
+                                return;
+
+                        }
+
+			api.AddBackendToLoadbalancer(contextid, loadbalancerid, backend , function(result, err) {
+
+				if (err) {
+					res.writeHead(500, {'Content-Type': 'application/json',
+						'X-ServedBy': IP + ":" + PORT });
+					res.end(err);
+				}
+
+				res.writeHead(200, {'Content-Type': 'application/json', 
+						'X-ServedBy': IP + ":" + PORT });
+
+				res.end(JSON.stringify(result));
+
+			});
+		});
+	}catch (err) {
+		res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end("No such loadbalancer. " + err);
+	}
+
+})
+
+/*
+ * Loadbalancer backends api-endpoints.
+ */
+map.set(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res) {
 	try {
 		const { headers } = req;
 		// 
@@ -121,80 +186,77 @@ map.set(new RegExp("/loadbalancer/(\\d)+/backends"), function ( req, res) {
 		//
 		var contextid = req.contextid;
 		var loadbalancerid = req.matches[1];
-		var backend = req.post.get("backend");
 
-		if (DEBUG) {
-			console.log(" Received data" + req.post)
+		if (req.method != "DELETE") {
+			res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+			res.end("Wrong HTTP Method. Use DELETE.\n" );
 		}
 
-		if (!backend) {
-			res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-			res.end("No backend defined. ");
+		// function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) 
+		api.GetLoadbalancerPermissions(contextid, [ req.method ], loadbalancerid, function(result, err) {
 			
-			return 
-		}
-
-		api.CheckPermissionsOnLoadbalancer(contextid, loadbalancerid, req.method, function(result, err) {
-			
-			if (result == false) {
+			if (!result && !err) {
 				res.writeHead(401, {'Content-Type': 'application/json', 
 							'X-ServedBy': IP + ":" + PORT });
-				res.end(err);
+				res.end("No such loadbalancer.\n");
 
 				return;
 			}
 
-			if (req.method == "POST") {
+			if (err && !result) {
+				res.writeHead(401, {'Content-Type': 'application/json', 
+							'X-ServedBy': IP + ":" + PORT });
+				res.end("Permission denied.\n");
 
-				api.AddBackendToLoadbalancer(contextid, loadbalancerid, backend , function(result, err) {
+				return;
 
-					if (err) {
-						res.writeHead(404, {'Content-Type': 'application/json', 
-								'X-ServedBy': IP + ":" + PORT });
-	
-						res.end(err);
-					}
-
-					if (DEBUG) {
-						console.log(result);
-					}
-
-					res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-					res.end(JSON.stringify(result));
-				
-
-				});
-			} else if (req.method == "DELETE") {
-
-				api.RemoveBackendFromLoadbalancer(contextid, loadbalancerid, backend , function(result, err) {
-
-					if (err) {
-						res.writeHead(404, {'Content-Type': 'application/json', 
-								'X-ServedBy': IP + ":" + PORT });
-	
-						res.end(err);
-					}
-
-					if (DEBUG) {
-						console.log(result);
-					}
-
-					res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-					res.end(JSON.stringify(result));
-				
-
-				});
 			}
+
+			if (result[0].permissiondata == "DENY") {
+				res.writeHead(401, {'Content-Type': 'application/json', 
+							'X-ServedBy': IP + ":" + PORT });
+				res.end("Permission denied.\n");
+
+				return;
+
+			}
+
+			var backend = req.matches[2];
+			if (!backend) {
+				res.writeHead(404, {'Content-Type': 'application/json', 
+					'X-ServedBy': IP + ":" + PORT });
+				res.end("No backend supplied (format: loadbalancer/{0}/backends/(\\d)+.\n".format(loadbalancerid));
+		
+				return 
+			}
+
+
+			api.RemoveBackendFromLoadbalancer(contextid, loadbalancerid, backend , function(result, err) {
+
+				if (err) {
+					res.writeHead(404, {'Content-Type': 'application/json', 
+							'X-ServedBy': IP + ":" + PORT });
+
+					res.end(err);
+				}
+
+				if (DEBUG) {
+					console.log(result);
+				}
+
+				res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+				res.end(JSON.stringify(result));
+			
+
+			});
 
 		});
 
 	}catch (err) {
-		res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+		res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
 		res.end("No such loadbalancer. " + err);
-
 	}
-
-}, ["POST","DELETE"] )});
+});
 
 
 //A sample GET request
@@ -208,27 +270,31 @@ map.set(new RegExp("/loadbalancer$"), function(req, res) {
 		// lbid: '1',
 		//    backend: [ 'http://www.jp.dk', 'http://www.eb.dk']  }
 		//
+		api.GetLoadbalancerIdsAndPermissions(req.contextid, [req.method], function(result, err) {
 
-		api.GetLoadBalancersFromContextID(req.contextid, function(result, err) {
 
-			if (err) {
+			if (!result) {
 				res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-				res.end("Not loadbalancers found");
+				res.end("No loadbalancers found.\n");
+				return 
 			}
 
 			if (DEBUG) {
 				console.log(result);
 			}
 
-			res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-			res.end(JSON.stringify(result));
+			// Load loadbalancer from result-set.
+			api.GetLoadBalancersFromPermissionsResult(result, function(result, err) {
+				res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+				res.end(JSON.stringify(result));
+			});
 
 			
 		});
 
 	}catch (err) {
 		res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-		res.end("Not loadbalancers found" + err);
+		res.end("No loadbalancers found.\n" + err);
 
 	}
 
@@ -255,13 +321,13 @@ const app = require('http').createServer(function (req, res) {
 				}
 				var match = key.exec(url);
 				req.matches = match;
-				return isAuthenticated(req, res, value);
+				return bodyparser(req, res, isAuthenticated, value)
 			}
 		});
 
 		if (found == false) {
 			res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-			res.end(JSON.stringify({ Method: "Not Found"}));
+			res.end("Not Found.\n");
 		}
 
 	} catch(err) {

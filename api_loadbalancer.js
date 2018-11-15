@@ -56,7 +56,7 @@ module.exports.AddBackendToLoadbalancer = function AddBackendToLoadbalancer(cont
 }
 
 module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbalancer(contextid, loadbalancerid, backend, cb) {
-	var sql = "DELETE FROM loadbalancer_routes WHERE lbid = {0} and backend = '{1}'".format(loadbalancerid, backend);
+	var sql = "DELETE FROM loadbalancer_routes WHERE id = {0} and lbid = '{1}'".format(backend, loadbalancerid);
 	con.query(sql, function (err, result) {
 		if (err || result.length == 0) {
 			cb([], "Could not remove from Loadbalancer backend");
@@ -67,25 +67,45 @@ module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbal
 
 }
 
-module.exports.CheckPermissionsOnLoadbalancer = function CheckPermissionsOnLoadbalancer(contextid, loadbalancerid, operation, cb) {
-	var sql = "select permissionkey, permissiondata from context_loadbalancer_permissions where context_loadbalancerid = (select id from context_loadbalancer where contextid = {0} and loadbalancerid={1}) AND permissionkey = '{2}'".format(contextid, loadbalancerid,operation);
+module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) {
+
+	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata, clp.permissionpath from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND cl.id = {1} AND clp.permissionkey IN ({2})'.format(contextid, loadbalancerid, "\"" + methods.join('","') + "\"")
 
 	if (DEBUG) {
 		console.log(sql);
 	}
 	con.query(sql, function(err, result) {
-		if (err || result.length == 0) {
-			cb(false, "Permission denied")
-		} else {
-			if (result[0].permissiondata == "ALLOW") {
-				cb(true, "Permission granted")
-			}
-
-			if (result[0].permissiondata == "DENY") {
-				cb(false, "Permission denied")
-			}
-
+		if (err) {
+			cb(false, err);
+			return
 		}
+		if (result.length == 0) {
+			cb(false, "No such permission")
+			return
+		}
+
+		cb(result, null)
+	});
+}
+
+module.exports.GetLoadbalancerIdsAndPermissions = function GetLoadbalancerIdsAndPermissions(contextid, methods,cb) {
+
+	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata, clp.permissionpath from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND clp.permissionkey IN ({1})'.format(contextid,"\"" + methods.join('","') + "\"")
+
+	if (DEBUG) {
+		console.log(sql);
+	}
+	con.query(sql, function(err, result) {
+		if (err) {
+			cb(false, err);
+			return
+		}
+		if (result.length == 0) {
+			cb(false, "No such permission")
+			return
+		}
+
+		cb(result, null)
 	});
 }
 
@@ -102,8 +122,15 @@ module.exports.GetContextId = function GetContextId(accesskey, secret, cb) {
 	});
 }
 
-module.exports.GetLoadBalancersFromContextID = function GetLoadBalancersFromContextID(contextid, cb) {
-	var sql = "select lb.id, lb.type, lb.method, lb.path from context c inner join context_loadbalancer cl on cl.contextid = c.id inner join loadbalancer lb on cl.loadbalancerid = lb.id where c.id = '{0}'".format(contextid);
+module.exports.GetLoadBalancersFromPermissionsResult = function GetLoadBalancersFromPermissionsResult(result, cb) {
+	
+//	ids = result.filter(word => [0].loadbalancerid
+	var ids = result.map(a => a.loadbalancerid);
+	if (DEBUG) {
+		console.log(result);
+	}
+
+	var sql = "select * from loadbalancer where id IN ( {0} )".format(ids);
 	con.query(sql, function (err, result) {
                 if (err || result.length == 0) {
                         cb([], "No results");
