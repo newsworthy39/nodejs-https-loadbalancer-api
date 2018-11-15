@@ -71,6 +71,7 @@ CREATE TABLE `context_loadbalancer_permissions` (
   `context_loadbalancerid` int(11) NOT NULL,
   `permissionkey` varchar(255) NOT NULL DEFAULT '',
   `permissiondata` text NOT NULL,
+  `permissionpath` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -115,4 +116,4 @@ CREATE TABLE `loadbalancer_routes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-14 18:19:36
+-- Dump completed on 2018-11-15 10:12:47
