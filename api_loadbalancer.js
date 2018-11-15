@@ -69,7 +69,7 @@ module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbal
 
 module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) {
 
-	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata, clp.permissionpath from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND cl.id = {1} AND clp.permissionkey IN ({2})'.format(contextid, loadbalancerid, "\"" + methods.join('","') + "\"")
+	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND cl.id = {1} AND clp.permissionkey IN ({2}) AND clp.permissiondata != "DENY"'.format(contextid, loadbalancerid, "\"" + methods.join('","') + "\"")
 
 	if (DEBUG) {
 		console.log(sql);
@@ -90,7 +90,7 @@ module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(
 
 module.exports.GetLoadbalancerIdsAndPermissions = function GetLoadbalancerIdsAndPermissions(contextid, methods,cb) {
 
-	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata, clp.permissionpath from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND clp.permissionkey IN ({1})'.format(contextid,"\"" + methods.join('","') + "\"")
+	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND clp.permissionkey IN ({1}) AND clp.permissiondata != "DENY"'.format(contextid,"\"" + methods.join('","') + "\"")
 
 	if (DEBUG) {
 		console.log(sql);

@@ -101,7 +101,7 @@ function isAuthenticated(req, res, next) {
 	}
 }
 
-map.set(new RegExp("/loadbalancer/(\\d)+/backends$"), function (req, res) {
+map.set(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (req, res) {
 	try {
 
 		const { headers } = req;
