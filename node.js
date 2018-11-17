@@ -165,7 +165,7 @@ dispatcher.OnPost(new RegExp("/loadbalancer/(\\d+)/backends$"), function (req, r
 /*
  * Loadbalancer backends api-endpoints.
  */
-dispatcher.OnDelete(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res) {
+dispatcher.OnDelete(new RegExp("/loadbalancer/(\\d+)/backends/(\\d+)$"), function ( req, res) {
 	try {
 		const { headers } = req;
 		// 
@@ -189,15 +189,6 @@ dispatcher.OnDelete(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), functio
 			}
 
 			if (err && !result) {
-				res.writeHead(401, {'Content-Type': 'application/json', 
-							'X-ServedBy': IP + ":" + PORT });
-				res.end("Permission denied.\n");
-
-				return;
-
-			}
-
-			if (result[0].permissiondata == "DENY") {
 				res.writeHead(401, {'Content-Type': 'application/json', 
 							'X-ServedBy': IP + ":" + PORT });
 				res.end("Permission denied.\n");
