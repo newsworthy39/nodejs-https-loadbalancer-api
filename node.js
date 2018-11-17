@@ -105,7 +105,7 @@ function isAuthenticated(req, res, next) {
 }
 
 
-dispatcher.OnPost(new RegExp("/loadbalancer/(\\d)+/backends$"), function (req, res) {
+dispatcher.OnPost(new RegExp("/loadbalancer/(\\d+)/backends$"), function (req, res) {
 	try {
 
 		const { headers } = req;

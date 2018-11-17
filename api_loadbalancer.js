@@ -134,12 +134,10 @@ module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(
 	}
 	con.query(sql, function(err, result) {
 		if (err) {
-			cb(false, err);
-			return
+			return cb(false, err);
 		}
 		if (result.length == 0) {
-			cb(false, "No such permission")
-			return
+			return cb([], "No permissions found.")
 		}
 
 		cb(result, null)
