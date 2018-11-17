@@ -1,16 +1,14 @@
-var http = require('http');
-var HashMap = require('hashmap')
-var qs = require('querystring');
-var api = require('./api_loadbalancer.js')
-
 const PORT = process.env.PORT || 8080;
 const LB   = process.env.LB || "192.168.1.11:5566";
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
 
+var http = require('http');
+var qs = require('querystring');
+var api = require('./api_loadbalancer.js')
+var dispatcher = require('./httpdispatcher.js')
+var HashMap = require('hashmap')
 
-// This is the routing-map.
-var map = new HashMap();
 var request_count = 0;
 
 // First, checks if it isn't implemented yet.
@@ -30,7 +28,11 @@ function remove(str, chars) {
   return str.replace(new RegExp(`[${chars}]`, 'g'), '');
 }
 
-function bodyparser (request, response, next, middleware) {
+function ncsalogger(request, response, next) {
+    next(request, response);
+}
+
+function bodyparser (request, response, next) {
     if (["POST","PUT","DELETE"].includes(request.method)) {
         var body = '';
 
@@ -54,11 +56,9 @@ function bodyparser (request, response, next, middleware) {
 		    copy.set(key.toLowerCase(), value);
 	    };
 	    request.post = copy;
-    	    next(request, response, middleware);
         });
-    } else {
-	    next(request, response, middleware);
     }
+    next(request, response);
 }
 
 // IsAuthenticated. This middleware, uses the API
@@ -86,14 +86,11 @@ function isAuthenticated(req, res, next) {
 					console.log("ContextID : {0}".format(req.contextid));
 				}
 
-				// call next.
-				next(req,res)
-
+    				next(req, res);
 			});
 		} else {
 			res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
 			res.end("Missing headers\n");
-
 		}
 	} catch(err) {
 		res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
@@ -101,7 +98,8 @@ function isAuthenticated(req, res, next) {
 	}
 }
 
-map.set(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (req, res) {
+
+dispatcher.OnPost(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (req, res) {
 	try {
 
 		const { headers } = req;
@@ -114,11 +112,6 @@ map.set(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (req, res) 
 			res.end("No backend posted (format: json{ backend: http://www.dr.dk }.\n");
 
 			return
-		}
-		
-		if (req.method != "POST") {
-			res.writeHead(400, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
-			res.end("Wrong HTTP Method. Use POST.\n");
 		}
 
     		// function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) 
@@ -170,12 +163,12 @@ map.set(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (req, res) 
 		res.end("No such loadbalancer. " + err);
 	}
 
-})
+});
 
 /*
  * Loadbalancer backends api-endpoints.
  */
-map.set(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res) {
+dispatcher.OnDelete(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res) {
 	try {
 		const { headers } = req;
 		// 
@@ -186,11 +179,6 @@ map.set(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res
 		//
 		var contextid = req.contextid;
 		var loadbalancerid = req.matches[1];
-
-		if (req.method != "DELETE") {
-			res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
-			res.end("Wrong HTTP Method. Use DELETE.\n" );
-		}
 
 		// function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) 
 		api.GetLoadbalancerPermissions(contextid, [ req.method ], loadbalancerid, function(result, err) {
@@ -260,8 +248,7 @@ map.set(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), function ( req, res
 
 
 //A sample GET request
-map.set(new RegExp("/loadbalancer$"), function(req, res) {
-
+dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
 	try {
 		// 
 		// method: 'round-robin',
@@ -270,11 +257,9 @@ map.set(new RegExp("/loadbalancer$"), function(req, res) {
 		//    backend: [ 'http://www.jp.dk', 'http://www.eb.dk']  }
 		//
 		api.GetLoadbalancerIdsAndPermissions(req.contextid, [req.method], function(result, err) {
-
-
 			if (!result) {
-				res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-				res.end("No loadbalancers found.\n");
+				res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+				res.end("No loadbalancers found. " + err + "\n");
 				return 
 			}
 
@@ -299,38 +284,25 @@ map.set(new RegExp("/loadbalancer$"), function(req, res) {
 
 });
 
+dispatcher.OnError(function(req, res) {
+	res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+	res.end("Not Found.\n");
+
+});
+
 // Setup server-part.
 const app = require('http').createServer(function (req, res) {
 	try {
-
-		// log the request on console
-	    	var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-	    	var method = req.method;
-	    	var url = req.url;
-
-	    	console.log((++request_count) + ". IP " + ip + " " + method + " " + url);
-
-		var found = false
-		map.forEach(function(value, key) {
-
-			if (key.test(url)) {
-				found = true
-				if (DEBUG) {
-					console.log(key + ": " + value);
-				}
-				var match = key.exec(url);
-				req.matches = match;
-				return bodyparser(req, res, isAuthenticated, value)
-			}
+		ncsalogger(req, res, function () {
+			return bodyparser(req, res, function() {
+				return isAuthenticated(req, res, function() {
+					dispatcher.route(req, res);
+				});
+			});
 		});
 
-		if (found == false) {
-			res.writeHead(404, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
-			res.end("Not Found.\n");
-		}
-
 	} catch(err) {
-        	console.log(err);
+        	console.error(err.stack || err);
 	}
 });
 
