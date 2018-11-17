@@ -29,9 +29,10 @@ function remove(str, chars) {
 
 function ncsalogger(request, response, next) {
     const { headers } = request;
+
     next(request, response);
     
-    console.log("%s \"%s %s HTTP/%s\" %d %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, request.socket.bytesWritten, headers["user-agent"]);
+    console.log("%s \"%s %s HTTP/%s\" %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, headers["user-agent"]);
 }
 
 function bodyparser (request, response, next) {
@@ -269,7 +270,7 @@ dispatcher.OnPost( new RegExp("/loadbalancer$"), function ( req, res) {
 
 });
 
-dispatcher.OnDelete( new RegExp("/loadbalancer/(\\d).?$"), function( req, res) {
+dispatcher.OnDelete( new RegExp("/loadbalancer/(\\d+).?$"), function( req, res) {
 	try {
 		var loadbalancerid = req.matches[1];
 
@@ -311,9 +312,9 @@ dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
 		//    backend: [ 'http://www.jp.dk', 'http://www.eb.dk']  }
 		//
 		api.GetLoadbalancerIdsAndPermissions(req.contextid, [req.method], function(result, err) {
-			if (!result) {
-				res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
-				res.end("No loadbalancers found. " + err + "\n");
+			if (err || result.length == 0) {
+				res.writeHead(200, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+				res.end(JSON.stringify({}));
 				return 
 			}
 
