@@ -29,7 +29,10 @@ function remove(str, chars) {
 }
 
 function ncsalogger(request, response, next) {
+    const { headers } = request;
     next(request, response);
+    
+    console.log("%s \"%s %s HTTP/%s\" %d %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, request.socket.bytesWritten, headers["user-agent"]);
 }
 
 function bodyparser (request, response, next) {
@@ -51,8 +54,8 @@ function bodyparser (request, response, next) {
             // use post['blah'], etc.
 	    var copy = new HashMap()
 	    for (var key in post) {
-		    value = remove(post[key], ' {}\"');
-		    key = remove(key, ' {}\"');
+		    value = remove(post[key], ' {}\"\'');
+		    key = remove(key, ' {}\"\'');
 		    copy.set(key.toLowerCase(), value);
 	    };
 	    request.post = copy;
