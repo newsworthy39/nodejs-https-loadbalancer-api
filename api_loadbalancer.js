@@ -66,14 +66,12 @@ module.exports.CreateLoadbalancerWithDefaultPermissions = function(cid, method, 
 //+----+------+-----------------------+
 //
 module.exports.AddBackendToLoadbalancer = function AddBackendToLoadbalancer(contextid, loadbalancerid, backend, cb) {
-
-	
 	var sql = "INSERT INTO loadbalancer_routes (lbid, backend) VALUES ({0},'{1}')".format(loadbalancerid, backend);
 	con.query(sql, function (err, result) {
 		if (err || result.length == 0) {
 			cb([], "Could not add to Loadbalancer backend");
 		} else {
-			cb(result)
+			cb({ "backendid" : result.insertId }, false);
 		};
 	});
 }
