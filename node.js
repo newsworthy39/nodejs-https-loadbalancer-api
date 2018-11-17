@@ -1,5 +1,4 @@
 const PORT = process.env.PORT || 8080;
-const LB   = process.env.LB || "192.168.1.11:5566";
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
 
@@ -260,15 +259,12 @@ dispatcher.OnPost( new RegExp("/loadbalancer$"), function ( req, res) {
 
 
 		api.CreateLoadbalancerWithDefaultPermissions(contextid, method, path, type, function(result) {
-
 			res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
 			res.end(JSON.stringify(result));
-
 		});
-
-
 	} catch (err) {
-
+		res.writeHead(400, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end("Malformed request: " + err);
 	}
 
 });
@@ -309,7 +305,6 @@ dispatcher.OnDelete( new RegExp("/loadbalancer/(\\d).?$"), function( req, res) {
 // Super-tidy, to be used with GoLang http/https-server.
 dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
 	try {
-		// 
 		// method: 'round-robin',
 		// path: 'http://test.api.dk',
 		// lbid: '1',
@@ -331,22 +326,16 @@ dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
 				res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
 				res.end(JSON.stringify(result));
 			});
-
-			
 		});
-
 	}catch (err) {
 		res.writeHead(500, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
 		res.end("Server error: " + err + ".\n");
-
 	}
-
 });
 
 dispatcher.OnError(function(req, res) {
 	res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
 	res.end("Not Found.\n");
-
 });
 
 // Setup server-part.
@@ -368,5 +357,3 @@ const app = require('http').createServer(function (req, res) {
 app.listen(PORT, () => {
 	console.log(`The server is listening on *:${PORT}`);
 });
-	
-
