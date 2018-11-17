@@ -32,6 +32,29 @@ con.connect(function(err) {
 });
 
 
+module.exports.CreateLoadbalancerWithDefaultPermissions = function(cid, method, path, type, cb) {
+	var sql = "INSERT INTO loadbalancer (method, path, type) VALUES ('{0}','{1}','{2}')".format(method, path, type);
+
+	con.query(sql, function(err, result, fields) {
+		if (err) throw err;
+		var id = result.insertId;
+
+		var sql = "INSERT INTO context_loadbalancer (contextid, loadbalancerid) VALUES ({0},{1})".format(cid, id);
+		con.query(sql, function(err, result, fields) {
+			if (err) throw err;
+			var clid = result.insertId;
+			
+			var sql = "INSERT INTO context_loadbalancer_permissions (context_loadbalancerid, permissionkey, permissiondata) VALUES ({0},'GET','ALLOW'),({0},'POST','ALLOW'),({0},'DELETE','ALLOW'),({0},'PUT','ALLOW')".format(clid);
+			con.query(sql, function(err, result, fields) {
+				if (err) throw err;
+				cb({ "loadbalancerid": id});
+			});
+
+		});
+	});
+}
+
+
 //
 //> select * from loadbalancer_routes;
 //+----+------+-----------------------+
@@ -67,9 +90,44 @@ module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbal
 
 }
 
+module.exports.DeleteLoadbalancerAndPermissionsAndRoutes = function(contextid, loadbalancerid) {
+	var sql = "DELETE FROM loadbalancer WHERE id = {0}".format(loadbalancerid);
+	con.query(sql, function (err, result) {
+		if (err) {
+			throw err
+		} 
+		console.log("Number of records deleted: " + result.affectedRows);
+	});
+
+	sql = "DELETE FROM context_loadbalancer_permissions WHERE context_loadbalancerid = (SELECT id FROM context_loadbalancer WHERE contextid = {0} AND loadbalancerid = {1})".format(contextid, loadbalancerid);
+	con.query(sql, function (err, result) {
+		if (err) {
+			throw err
+		} 
+		console.log("Number of records deleted: " + result.affectedRows);
+	});
+
+	sql = "DELETE FROM context_loadbalancer WHERE contextid = {0} AND loadbalancerid = {1}".format(contextid, loadbalancerid);
+	con.query(sql, function (err, result) {
+		if (err) {
+			throw err
+		} 
+		console.log("Number of records deleted: " + result.affectedRows);
+	});
+
+	sql = "DELETE FROM loadbalancer_routes WHERE lbid = {0}".format(loadbalancerid);
+	con.query(sql, function (err, result) {
+		if (err) {
+			throw err
+		} 
+		console.log("Number of records deleted: " + result.affectedRows);
+	});
+
+}
+
 module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) {
 
-	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND cl.id = {1} AND clp.permissionkey IN ({2}) AND clp.permissiondata != "DENY"'.format(contextid, loadbalancerid, "\"" + methods.join('","') + "\"")
+	var sql = 'select cl.id, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND cl.loadbalancerid = {1} AND clp.permissionkey IN ({2}) AND clp.permissiondata != "DENY"'.format(contextid, loadbalancerid, "\"" + methods.join('","') + "\"")
 
 	if (DEBUG) {
 		console.log(sql);
@@ -90,7 +148,7 @@ module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(
 
 module.exports.GetLoadbalancerIdsAndPermissions = function GetLoadbalancerIdsAndPermissions(contextid, methods,cb) {
 
-	var sql = 'select cl.id as loadbalancerid, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND clp.permissionkey IN ({1}) AND clp.permissiondata != "DENY"'.format(contextid,"\"" + methods.join('","') + "\"")
+	var sql = 'select cl.loadbalancerid, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND clp.permissionkey IN ({1}) AND clp.permissiondata != "DENY"'.format(contextid,"\"" + methods.join('","') + "\"")
 
 	if (DEBUG) {
 		console.log(sql);

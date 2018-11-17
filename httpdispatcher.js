@@ -34,9 +34,6 @@ module.exports.route = function route(req, res) {
 	map.forEach(function(object) {
 		if (object.key.test(req.url) && object.methods.includes(req.method)) {
 			found = true
-			if (DEBUG) {
-				console.log(object.key + ": " + object.callback);
-			}
 
 			// Add the capture-groups, to req.
 			var match = object.key.exec(req.url);

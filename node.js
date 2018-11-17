@@ -51,8 +51,8 @@ function bodyparser (request, response, next) {
             // use post['blah'], etc.
 	    var copy = new HashMap()
 	    for (var key in post) {
-		    value = remove(post[key], ' {}');
-		    key = remove(key, ' {}');
+		    value = remove(post[key], ' {}\"');
+		    key = remove(key, ' {}\"');
 		    copy.set(key.toLowerCase(), value);
 	    };
 	    request.post = copy;
@@ -78,6 +78,8 @@ function isAuthenticated(req, res, next) {
 				if (err) {
 					res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
 					res.end("No Such Context");
+
+					return;
 				}
 				
 				req.contextid = contextid;
@@ -91,6 +93,7 @@ function isAuthenticated(req, res, next) {
 		} else {
 			res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
 			res.end("Missing headers\n");
+			return;
 		}
 	} catch(err) {
 		res.writeHead(401, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
@@ -99,7 +102,7 @@ function isAuthenticated(req, res, next) {
 }
 
 
-dispatcher.OnPost(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (req, res) {
+dispatcher.OnPost(new RegExp("/loadbalancer/(\\d)+/backends$"), function (req, res) {
 	try {
 
 		const { headers } = req;
@@ -126,15 +129,6 @@ dispatcher.OnPost(new RegExp("/loadbalancer/(\\d)+/backends(\/).?$"), function (
                         }
 
                         if (err && !result) {
-                                res.writeHead(401, {'Content-Type': 'text/plain',
-                                                        'X-ServedBy': IP + ":" + PORT });
-                                res.end("Permission denied.\n");
-
-                                return;
-
-                        }
-
-                        if (result[0].permissiondata == "DENY") {
                                 res.writeHead(401, {'Content-Type': 'text/plain',
                                                         'X-ServedBy': IP + ":" + PORT });
                                 res.end("Permission denied.\n");
@@ -246,8 +240,70 @@ dispatcher.OnDelete(new RegExp("/loadbalancer/(\\d)+/backends/(\\d+)$"), functio
 	}
 });
 
+dispatcher.OnPost( new RegExp("/loadbalancer$"), function ( req, res) {
+	try {
+	       const { headers } = req;
+                var contextid = req.contextid;
+                var method = req.post.get("method");
+                var path = req.post.get("path");
+		var type = req.post.get("type");
 
-//A sample GET request
+	        if (!method || !path || !type) {
+			res.writeHead(400, {'Content-Type': 'text/plain','X-ServedBy': IP + ":" + PORT });
+			res.end("Wrong json format. (format: json{ method: , path:, type: 'ProxyTarget'}.\n");
+
+			return
+		}
+
+
+		api.CreateLoadbalancerWithDefaultPermissions(contextid, method, path, type, function(result) {
+
+			res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+			res.end(JSON.stringify(result));
+
+		});
+
+
+	} catch (err) {
+
+	}
+
+});
+
+dispatcher.OnDelete( new RegExp("/loadbalancer/(\\d).?$"), function( req, res) {
+	try {
+		var loadbalancerid = req.matches[1];
+
+		// Fetch by permission.
+		api.GetLoadbalancerIdsAndPermissions(req.contextid, [req.method], function(result, err) {
+			if (!result) {
+				res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+				res.end("No loadbalancers found. " + err + "\n");
+				return 
+			}
+
+			if (DEBUG) {
+				console.log(result);
+			}
+
+			result.forEach(function(row) {
+				if (row.loadbalancerid == loadbalancerid) {
+					api.DeleteLoadbalancerAndPermissionsAndRoutes
+						(req.contextid, row.loadbalancerid);
+				}
+			});
+		
+			res.writeHead(200, {'Content-Type':'application/json', 'X-ServedBy': IP + ":" + PORT });
+			res.end(JSON.stringify(result));
+		});
+	} catch(err) {
+		res.writeHead(400, {'Content-Type':'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end("Malformed request, err: " + err);
+	}
+});
+
+// OnGet. Extract full json loadbalancer-configuration.
+// Super-tidy, to be used with GoLang http/https-server.
 dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
 	try {
 		// 
