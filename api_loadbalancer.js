@@ -65,7 +65,7 @@ module.exports.CreateLoadbalancerWithDefaultPermissions = function(cid, method, 
 //|  3 | 2    | http://192.168.1.1    |
 //+----+------+-----------------------+
 //
-module.exports.AddBackendToLoadbalancer = function AddBackendToLoadbalancer(contextid, loadbalancerid, backend, cb) {
+module.exports.AddBackendToLoadbalancer = function AddBackendToLoadbalancer(loadbalancerid, backend, cb) {
 	var sql = "INSERT INTO loadbalancer_routes (lbid, backend) VALUES ({0},'{1}')".format(loadbalancerid, backend);
 	con.query(sql, function (err, result) {
 		if (err || result.length == 0) {
@@ -76,7 +76,7 @@ module.exports.AddBackendToLoadbalancer = function AddBackendToLoadbalancer(cont
 	});
 }
 
-module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbalancer(contextid, loadbalancerid, backend, cb) {
+module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbalancer(loadbalancerid, backend, cb) {
 	var sql = "DELETE FROM loadbalancer_routes WHERE id = {0} and lbid = '{1}'".format(backend, loadbalancerid);
 	con.query(sql, function (err, result) {
 		if (err || result.length == 0) {

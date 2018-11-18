@@ -1,14 +1,13 @@
 const PORT = process.env.PORT || 8080;
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
+const LB    = process.env.LB || 1
 
 var http = require('http');
 var qs = require('querystring');
 var api = require('./api_loadbalancer.js')
 var dispatcher = require('./httpdispatcher.js')
 var HashMap = require('hashmap')
-
-var request_count = 0;
 
 // First, checks if it isn't implemented yet.
 if (!String.prototype.format) {
@@ -140,7 +139,7 @@ dispatcher.OnPost(new RegExp("/loadbalancer/(\\d+)/backends$"), function (req, r
 
                         }
 
-			api.AddBackendToLoadbalancer(contextid, loadbalancerid, backend , function(result, err) {
+			api.AddBackendToLoadbalancer(loadbalancerid, backend , function(result, err) {
 
 				if (err) {
 					res.writeHead(500, {'Content-Type': 'application/json',
@@ -332,7 +331,9 @@ dispatcher.OnError(function(req, res) {
 
 // Setup server-part.
 const app = require('http').createServer(function (req, res) {
+
 	try {
+		// NCSA(ish)-logging.
 		ncsalogger(req, res, function () {
 			return bodyparser(req, res, function() {
 				return isAuthenticated(req, res, function() {
@@ -347,5 +348,22 @@ const app = require('http').createServer(function (req, res) {
 });
 
 app.listen(PORT, () => {
-	console.log(`The server is listening on *:${PORT}`);
+	// When the API boots up, it adds itself, to the api-loadbalancer ;)
+	// Context-id = 1, Loadbalancer.
+	api.AddBackendToLoadbalancer(LB, "http://{0}:{1}".format(IP ,PORT), function(result, err) {
+		console.log(`The server is listening on *:${PORT} with backendid ${result.backendid}.`);
+
+		// Register shutdown-function.
+		var shutdown = function() {
+
+		  api.RemoveBackendFromLoadbalancer(LB, result.backendid)
+		  // register-information.
+		  if (DEBUG)
+			console.log(`de-registering the listening on *:${PORT} with backendid ${result.backendid}.`);
+
+		  // Leave
+		  process.exit();
+		}
+		process.on( "SIGINT", shutdown );
+	});
 });
