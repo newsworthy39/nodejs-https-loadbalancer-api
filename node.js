@@ -292,6 +292,59 @@ dispatcher.OnDelete( new RegExp("/loadbalancer/(\\d+).?$"), function( req, res) 
 	}
 });
 
+dispatcher.OnPut( new RegExp("/loadbalancer/(\\d+)/terminationprotection$"), function( req, res) {
+	try {
+		var loadbalancerid = req.matches[1];
+		var value = req.post.get("value");
+
+		if (!value) {
+			res.writeHead(400, {'Content-Type': 'text/plain','X-ServedBy': IP + ":" + PORT });
+			res.end("Wrong json format. (format: json{ value: 0/1 {bool}'}.\n");
+
+			return
+		}
+
+		// Fetch by permission.
+		api.GetLoadbalancerIdsAndPermissions(req.contextid, [req.method], function(result, err) {
+			if (!result) {
+				res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+				res.end("No loadbalancers found. " + err + "\n");
+				return 
+			}
+
+			if (DEBUG) {
+				console.log(result);
+			}
+
+			var found = false;
+			result.forEach(function(row) {
+				if (row.loadbalancerid == loadbalancerid) {
+					found = true;
+				}
+			});
+
+			if (found) {
+				api.SetTerminationProtectionOnLoadbalancer(loadbalancerid, 
+						value, function(err, result) {
+					res.writeHead(204, 
+							{'Content-Type':'application/json', 'X-ServedBy': IP + ":" + PORT });
+					res.end(JSON.stringify({}));
+
+				
+				});
+			} else {
+				res.writeHead(403, {'Content-Type':'application/json', 'X-ServedBy': IP + ":" + PORT });
+				res.end(JSON.stringify({}));
+			}
+
+		});
+	} catch(err) {
+		res.writeHead(400, {'Content-Type':'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end("Malformed request, err: " + err);
+	}
+});
+
+
 // OnGet. Extract full json loadbalancer-configuration.
 // Super-tidy, to be used with GoLang http/https-server.
 dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
@@ -351,17 +404,20 @@ app.listen(PORT, () => {
 	// When the API boots up, it adds itself, to the api-loadbalancer ;)
 	// Context-id = 1, Loadbalancer.
 	api.AddBackendToLoadbalancer(LB, "http://{0}:{1}".format(IP ,PORT), function(result, err) {
-		console.log(`The server is listening on *:${PORT} with backendid ${result.backendid}.`);
+		var id = result.backendid;
+
+		console.log(`The server is listening on *:${PORT} with backendid ${id}.`);
 
 			// Register shutdown-function.
-			var shutdown = function() {
-				api.RemoveBackendFromLoadbalancer(LB, result.backendid, function(result) {
-					console.log(`de-registering the listening on *:${PORT} with backendid ${result.backendid}.`);
-				});
+		var shutdown = function() {
+			api.RemoveBackendFromLoadbalancer(LB, id, function(result) {
+				console.log(`de-registering the listening on *:${PORT} with backendid ${id}.`);
 
-			  // Leave
-			  process.exit();
-			}
+		        	// Leave
+		   		process.exit();
+
+			});
+		}
 
 		process.on( "SIGINT", shutdown );
 	});

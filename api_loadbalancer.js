@@ -118,6 +118,14 @@ module.exports.DeleteLoadbalancerAndPermissionsAndRoutes = function(contextid, l
 	});
 }
 
+module.exports.SetTerminationProtectionOnLoadbalancer = function(loadbalancerid, value, callback) {
+	var sql = "UPDATE loadbalancer SET terminationprotection = {0}".format(value);
+	con.query(sql, function(err, result, fields) {
+		if (err) throw err;
+		callback(result, err);
+	});
+}
+
 module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) {
 
 	var sql = 'select cl.loadbalancerid, clp.permissionkey, clp.permissiondata from context c inner join context_loadbalancer cl on cl.contextid = c.id  inner join context_loadbalancer_permissions clp on cl.id = clp.context_loadbalancerid where c.id = {0} AND cl.loadbalancerid = {1} AND clp.permissionkey IN ({2}) AND clp.permissiondata != "DENY"'.format(contextid, loadbalancerid, "\"" + methods.join('","') + "\"")
