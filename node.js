@@ -206,7 +206,7 @@ dispatcher.OnDelete(new RegExp("/loadbalancer/(\\d+)/backends/(\\d+)$"), functio
 			}
 
 
-			api.RemoveBackendFromLoadbalancer(contextid, loadbalancerid, backend , function(result, err) {
+			api.RemoveBackendFromLoadbalancer(loadbalancerid, backend , function(result, err) {
 
 				if (err) {
 					res.writeHead(404, {'Content-Type': 'application/json', 
@@ -353,17 +353,16 @@ app.listen(PORT, () => {
 	api.AddBackendToLoadbalancer(LB, "http://{0}:{1}".format(IP ,PORT), function(result, err) {
 		console.log(`The server is listening on *:${PORT} with backendid ${result.backendid}.`);
 
-		// Register shutdown-function.
-		var shutdown = function() {
+			// Register shutdown-function.
+			var shutdown = function() {
+				api.RemoveBackendFromLoadbalancer(LB, result.backendid, function(result) {
+					console.log(`de-registering the listening on *:${PORT} with backendid ${result.backendid}.`);
+				});
 
-		  api.RemoveBackendFromLoadbalancer(LB, result.backendid)
-		  // register-information.
-		  if (DEBUG)
-			console.log(`de-registering the listening on *:${PORT} with backendid ${result.backendid}.`);
+			  // Leave
+			  process.exit();
+			}
 
-		  // Leave
-		  process.exit();
-		}
 		process.on( "SIGINT", shutdown );
 	});
 });

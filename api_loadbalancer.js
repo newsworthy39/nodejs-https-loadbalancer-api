@@ -82,45 +82,40 @@ module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbal
 		if (err || result.length == 0) {
 			cb([], "Could not remove from Loadbalancer backend");
 		} else {
-			cb(result)
+			cb(result,null)
 		};
 	});
 
 }
 
 module.exports.DeleteLoadbalancerAndPermissionsAndRoutes = function(contextid, loadbalancerid) {
-	var sql = "DELETE FROM loadbalancer WHERE id = {0}".format(loadbalancerid);
+	var sql = "DELETE FROM loadbalancer WHERE id = {0} AND terminationprotection = 0".format(loadbalancerid);
 	con.query(sql, function (err, result) {
-		if (err) {
-			throw err
-		} 
+		if (err) throw err
 		console.log("Number of records deleted: " + result.affectedRows);
-	});
 
-	sql = "DELETE FROM context_loadbalancer_permissions WHERE context_loadbalancerid = (SELECT id FROM context_loadbalancer WHERE contextid = {0} AND loadbalancerid = {1})".format(contextid, loadbalancerid);
-	con.query(sql, function (err, result) {
-		if (err) {
-			throw err
-		} 
-		console.log("Number of records deleted: " + result.affectedRows);
-	});
+		sql = "DELETE FROM context_loadbalancer_permissions WHERE context_loadbalancerid = (SELECT id FROM context_loadbalancer WHERE contextid = {0} AND loadbalancerid = {1})".format(contextid, loadbalancerid);
+		con.query(sql, function (err, result) {
+			if (err) throw err
+			console.log("Deleted context_loadbalancer_permissions deleted: " + result.affectedRows);
 
-	sql = "DELETE FROM context_loadbalancer WHERE contextid = {0} AND loadbalancerid = {1}".format(contextid, loadbalancerid);
-	con.query(sql, function (err, result) {
-		if (err) {
-			throw err
-		} 
-		console.log("Number of records deleted: " + result.affectedRows);
-	});
+			sql = "DELETE FROM context_loadbalancer WHERE contextid = {0} AND loadbalancerid = {1}".format(contextid, loadbalancerid);
+			con.query(sql, function (err, result) {
+				if (err) throw err
 
-	sql = "DELETE FROM loadbalancer_routes WHERE lbid = {0}".format(loadbalancerid);
-	con.query(sql, function (err, result) {
-		if (err) {
-			throw err
-		} 
-		console.log("Number of records deleted: " + result.affectedRows);
-	});
+				console.log("Deleted context_loadbalancer records:: " + result.affectedRows);
 
+				sql = "DELETE FROM loadbalancer_routes WHERE lbid = {0}".format(loadbalancerid);
+				con.query(sql, function (err, result) {
+					if (err) throw err
+					console.log("Deleted loadbalancer_routes: " + result.affectedRows);
+				});
+
+			});
+
+		});
+
+	});
 }
 
 module.exports.GetLoadbalancerPermissions = function GetLoadbalancerPermissions(contextid, methods, loadbalancerid, cb) {
