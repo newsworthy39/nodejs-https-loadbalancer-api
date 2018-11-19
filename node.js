@@ -329,14 +329,11 @@ dispatcher.OnPut( new RegExp("/loadbalancer/(\\d+)/terminationprotection$"), fun
 					res.writeHead(204, 
 							{'Content-Type':'application/json', 'X-ServedBy': IP + ":" + PORT });
 					res.end(JSON.stringify({}));
-
-				
 				});
 			} else {
 				res.writeHead(403, {'Content-Type':'application/json', 'X-ServedBy': IP + ":" + PORT });
 				res.end(JSON.stringify({}));
 			}
-
 		});
 	} catch(err) {
 		res.writeHead(400, {'Content-Type':'text/plain', 'X-ServedBy': IP + ":" + PORT });
