@@ -13,17 +13,23 @@ if (!String.prototype.format) {
   };
 }
 
-
+// These params, are used to start the API itself and
+// Report itself, correctly.
 const PORT = process.env.PORT || 8080;
-const LB   = process.env.LB || "192.168.1.11:5566";
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
 
+// Receive env params (docker+lxd+k8s) support w/ defaults.
+const DB_PASS = process.env.DB_PASS || "api_clouddom"
+const DB_ENDPOINT = process.env.DB_ENDPOINT || "localhost"
+const DB_SCHEME   = process.env.DB_SCHEME || "api_clouddom"
+const DB_USER = process.env.DB_USER || "api_clouddom"
+
 var con = mysql.createConnection( {
-	host: 'localhost',
-	user: 'api_clouddom',
-	password: 'api_clouddom',
-	database: 'api_clouddom',
+	host: DB_ENDPOINT,
+	user: DB_USER,
+	password: DB_PASS,
+	database: DB_SCHEME,
 } );
 
 con.connect(function(err) {
