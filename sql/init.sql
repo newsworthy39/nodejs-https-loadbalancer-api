@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.24, for Linux (x86_64)
 --
--- Host: localhost    Database: api_clouddom
+-- Host: 192.168.1.18    Database: api_clouddom
 -- ------------------------------------------------------
 -- Server version	5.7.24-0ubuntu0.18.04.1
 
@@ -32,6 +32,19 @@ CREATE TABLE `authentication` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `capabilities`
+--
+
+DROP TABLE IF EXISTS `capabilities`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `capabilities` (
+  `module_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`module_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `context`
 --
 
@@ -56,7 +69,7 @@ CREATE TABLE `context_loadbalancer` (
   `contextid` int(11) NOT NULL,
   `loadbalancerid` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -72,7 +85,7 @@ CREATE TABLE `context_loadbalancer_permissions` (
   `permissionkey` varchar(255) NOT NULL DEFAULT '',
   `permissiondata` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -88,6 +101,9 @@ CREATE TABLE `loadbalancer` (
   `path` varchar(255) NOT NULL,
   `type` varchar(64) NOT NULL DEFAULT 'ProxyTarget',
   `terminationprotection` tinyint(1) DEFAULT '0',
+  `healthcheck_status` int(11) NOT NULL,
+  `healthcheck_path` varchar(255) NOT NULL,
+  `healthcheck_active` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -104,7 +120,7 @@ CREATE TABLE `loadbalancer_routes` (
   `lbid` varchar(64) DEFAULT NULL,
   `backend` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=115 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -116,4 +132,4 @@ CREATE TABLE `loadbalancer_routes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-18 20:46:38
+-- Dump completed on 2018-11-23 14:31:09
