@@ -162,7 +162,17 @@ module.exports.GetLoadBalancersFromPermissionsResult = function GetLoadBalancers
 		console.log(result);
 	}
 
-	var sql = "select * from loadbalancer where id IN ( {0} )".format(ids);
+	// 
+	// id: 1,
+	// method: "round-robin",
+	// path: "https://api.clouddom.eu/loadbalancer",
+	// type: "apitarget",
+	// terminationprotection: 1,
+	// healthcheck_status: 0,
+	// healthcheck_path: "",
+	// healthcheck_active: 0,
+
+	var sql = "select id, method, path, type, terminationprotection, healthcheck_status as HealthcheckStatus, healthcheck_path as HealthcheckPath, healthcheck_active as HealthcheckActive, healthcheck_interval as HealthcheckInterval from loadbalancer where id IN ( {0} )".format(ids);
 	con.query(sql, function (err, result) {
                 if (err || result.length == 0) {
                         cb([], "No results");
