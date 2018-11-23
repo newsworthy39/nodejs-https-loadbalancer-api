@@ -5,9 +5,12 @@ const LB    = process.env.LB || 1
 
 var http = require('http');
 var qs = require('querystring');
-var api = require('./api_loadbalancer.js')
 var dispatcher = require('./httpdispatcher.js')
 var HashMap = require('hashmap')
+
+// Clouddom-stuff
+var events = require('./api_events.js');
+var api = require('./api_loadbalancer.js')
 
 // First, checks if it isn't implemented yet.
 if (!String.prototype.format) {
@@ -377,6 +380,21 @@ dispatcher.OnGet( new RegExp("/loadbalancer$") , function(req, res) {
 dispatcher.OnError(function(req, res) {
 	res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
 	res.end("Not Found.\n");
+});
+
+dispatcher.OnGet( new RegExp("/capabilities$"), function(req, res) {
+	try {
+		
+		api.GetCapabilities( function( result, err) {
+			if (err) throw err;
+			res.writeHead(200, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+			res.end(JSON.stringify(result));
+		});
+	}catch (err) {
+		res.writeHead(500, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end("Server error: " + err + ".\n");
+
+	}
 });
 
 // Setup server-part.

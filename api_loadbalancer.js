@@ -1,17 +1,3 @@
-var mysql = require('mysql')
-
-// First, checks if it isn't implemented yet.
-if (!String.prototype.format) {
-  String.prototype.format = function() {
-    var args = arguments;
-    return this.replace(/{(\d+)}/g, function(match, number) {
-      return typeof args[number] != 'undefined'
-        ? args[number]
-        : match
-      ;
-    });
-  };
-}
 
 // These params, are used to start the API itself and
 // Report itself, correctly.
@@ -19,24 +5,8 @@ const PORT = process.env.PORT || 8080;
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
 
-// Receive env params (docker+lxd+k8s) support w/ defaults.
-const DB_PASS = process.env.DB_PASS || "api_clouddom"
-const DB_ENDPOINT = process.env.DB_ENDPOINT || "localhost"
-const DB_SCHEME   = process.env.DB_SCHEME || "api_clouddom"
-const DB_USER = process.env.DB_USER || "api_clouddom"
-
-var con = mysql.createConnection( {
-	host: DB_ENDPOINT,
-	user: DB_USER,
-	password: DB_PASS,
-	database: DB_SCHEME,
-} );
-
-con.connect(function(err) {
-	if (err) throw err;
-	console.log("Connected to database!");
-});
-
+const MODULE_NAME = "LOADBALANCER"
+const con = require('./mysql-database.js').Register(MODULE_NAME)
 
 module.exports.CreateLoadbalancerWithDefaultPermissions = function(cid, method, path, type, cb) {
 	var sql = "INSERT INTO loadbalancer (method, path, type) VALUES ('{0}','{1}','{2}')".format(method, path, type);
@@ -248,3 +218,17 @@ function PopulateRoutesInLoadbalancer(results, done, count, length) {
 	}
 
 }
+
+module.exports.GetCapabilities = function(callback ) {
+
+	var sql = "SELECT module_name as ModuleName FROM capabilities";
+
+	con.query(sql, function(err, result, fields) {
+		if (err) throw err;
+		callback(result, err);
+	});
+
+
+
+}
+
