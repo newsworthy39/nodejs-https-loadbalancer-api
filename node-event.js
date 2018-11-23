@@ -121,8 +121,6 @@ dispatcher.OnPost( new RegExp("/events$"), function ( req, res) {
                 var eventid = req.post.get("eventid");
 		var eventdata = req.post.get("eventdata");
 
-		console.log("Received event {0} {1}.\n".format(eventid, eventdata));
-
 	        if (!eventid || !eventdata) {
 			res.writeHead(400, {'Content-Type': 'text/plain','X-ServedBy': IP + ":" + PORT });
 			res.end("Wrong json format. (format: json{ eventid: , eventdata:}.\n");
@@ -130,11 +128,11 @@ dispatcher.OnPost( new RegExp("/events$"), function ( req, res) {
 		}
 		
 		res.writeHead(201, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
-		res.end("Malformed request: " + err);
+		res.end("OK");
 
 	} catch (err) {
-		res.writeHead(400, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
-		res.end("Malformed request: " + err);
+		res.writeHead(400, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+		res.end(JSON.stringify ( {"Malformed" : err} ));
 	}
 
 });
@@ -180,6 +178,7 @@ var register = function(callback) {
 	    body: payload,
 	}
 	request(options, function(error, response, body)  {
+		if (error) throw error;
                 callback(JSON.parse(body), error);
 	});
 }
@@ -192,19 +191,25 @@ app.listen(PORT, () => {
 
                 // Register shutdown-function.
                 var shutdown = function() {
-			var backend = `https://api.clouddom.eu/loadbalancer/12/backends/${id}`
-			var options = {
-			    url    : backend,
-			    headers: {
-			      'Content-Type': 'text/plain',
-			      'accesskey' : 'test',
-			      'secret':'test',
-			    },
-			    method: 'DELETE',
-			}
-			request(options, function(error, response, body)  {
-                                process.exit();
-                        });
+
+			// Unregister events.
+			connection.Unregister(con, MODULE_NAME, function(result, err) {
+				if (err) throw err;
+
+				var backend = `https://api.clouddom.eu/loadbalancer/12/backends/${id}`
+				var options = {
+				    url    : backend,
+				    headers: {
+				      'Content-Type': 'text/plain',
+				      'accesskey' : 'test',
+				      'secret':'test',
+				    },
+				    method: 'DELETE',
+				}
+				request(options, function(error, response, body)  {
+					process.exit();
+				});
+			});
                 }
                 process.on( "SIGINT", shutdown);
 
