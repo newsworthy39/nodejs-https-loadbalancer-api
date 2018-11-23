@@ -43,17 +43,32 @@ module.exports.CreateLoadbalancerWithDefaultPermissions = function(cid, method, 
 //+----+------+-----------------------+
 //
 module.exports.AddBackendToLoadbalancer = function AddBackendToLoadbalancer(loadbalancerid, backend, cb) {
-	var sql = "INSERT INTO loadbalancer_routes (lbid, backend) VALUES ({0},'{1}')".format(loadbalancerid, backend);
-	con.query(sql, function (err, result) {
-		if (err || result.length == 0) {
-			cb([], "Could not add to Loadbalancer backend");
-		} else {
-			cb({ "backendid" : result.insertId }, false);
-		};
+	// Start by removing matches, and re-inserting it.
+	this.RemoveBackendsFromLoadbalancer(loadbalancerid, backend, function(result, err) {
+		var sql = "INSERT INTO loadbalancer_routes (lbid, backend) VALUES ({0},'{1}')".format(loadbalancerid, backend);
+		con.query(sql, function (err, result) {
+			if (err || result.length == 0) {
+				cb([], "Could not add to Loadbalancer backend");
+			} else {
+				cb({ "backendid" : result.insertId }, false);
+			};
+		});
 	});
 }
 
-module.exports.RemoveBackendFromLoadbalancer = function RemoveBackendFromLoadbalancer(loadbalancerid, backend, cb) {
+module.exports.RemoveBackendsFromLoadbalancer = function (lbid, backend, cb) {
+	var sql = "DELETE FROM loadbalancer_routes WHERE lbid = {0} and backend= '{1}'".format(lbid, backend);
+	con.query(sql, function (err, result) {
+		if (err || result.length == 0) {
+			cb([], "Could not remove from Loadbalancer backend");
+		} else {
+			cb(result,null)
+		};
+	});
+
+}
+
+module.exports.RemoveBackendFromLoadbalancer = function (loadbalancerid, backend, cb) {
 	var sql = "DELETE FROM loadbalancer_routes WHERE id = {0} and lbid = '{1}'".format(backend, loadbalancerid);
 	con.query(sql, function (err, result) {
 		if (err || result.length == 0) {
