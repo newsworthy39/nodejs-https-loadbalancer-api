@@ -9,8 +9,12 @@ var dispatcher = require('./httpdispatcher.js')
 var HashMap = require('hashmap')
 
 // Clouddom-stuff
-var events = require('./api_events.js');
 var api = require('./api_loadbalancer.js')
+
+const MODULE_NAME = "LOADBALANCER"
+const connection = require('./mysql-database.js')
+const con = connection.Register(MODULE_NAME)
+api.Use(con)
 
 // First, checks if it isn't implemented yet.
 if (!String.prototype.format) {
@@ -34,7 +38,7 @@ function ncsalogger(request, response, next) {
 
     next(request, response);
     
-    console.log("%s \"%s %s HTTP/%s\" %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, headers["user-agent"]);
+    console.log("node-loadbalancer %s \"%s %s HTTP/%s\" %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, headers["user-agent"]);
 }
 
 function bodyparser (request, response, next) {
@@ -399,7 +403,6 @@ dispatcher.OnGet( new RegExp("/capabilities$"), function(req, res) {
 
 // Setup server-part.
 const app = require('http').createServer(function (req, res) {
-
 	try {
 		// NCSA(ish)-logging.
 		ncsalogger(req, res, function () {
@@ -423,14 +426,17 @@ app.listen(PORT, () => {
 
 		console.log(`The server is listening on *:${PORT} with backendid ${id}.`);
 
-			// Register shutdown-function.
+		// Register shutdown-function.
 		var shutdown = function() {
 			api.RemoveBackendFromLoadbalancer(LB, id, function(result) {
-				console.log(`de-registering the listening on *:${PORT} with backendid ${id}.`);
+				connection.Unregister(con, MODULE_NAME, function(result, err) {
+					if (err) throw err;
+					console.log(`de-registering the listening on *:${PORT} with backendid ${id}.`);
 
-		        	// Leave
-		   		process.exit();
+			        	// Leave
+		   			process.exit();
 
+				});
 			});
 		}
 

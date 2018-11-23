@@ -5,6 +5,7 @@ const PORT = process.env.PORT || 8080;
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
 
-const MODULE_NAME = "EVENTS"
-const con = require('./mysql-database.js').Register(MODULE_NAME)
+module.exports.Use = function(backend) {
+	con = backend;
+}
 

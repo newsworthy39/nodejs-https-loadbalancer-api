@@ -49,3 +49,16 @@ module.exports.Register = function (module_name) {
 
 	return con
 }
+
+module.exports.Unregister = function (connection, module_name, callback) {
+
+
+	var sql = "DELETE FROM capabilities WHERE MODULE_NAME = '{0}'".format(module_name)
+	connection.query(sql, function(err, result, fields) {
+		
+		if (err) throw err;
+		callback(result, err);
+	});
+
+	return con
+}

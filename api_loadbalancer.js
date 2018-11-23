@@ -5,8 +5,9 @@ const PORT = process.env.PORT || 8080;
 const IP   = process.env.IP || "localhost"
 const DEBUG = process.env.DEBUG || false
 
-const MODULE_NAME = "LOADBALANCER"
-const con = require('./mysql-database.js').Register(MODULE_NAME)
+module.exports.Use = function(backend) {
+	con = backend;
+}
 
 module.exports.CreateLoadbalancerWithDefaultPermissions = function(cid, method, path, type, cb) {
 	var sql = "INSERT INTO loadbalancer (method, path, type) VALUES ('{0}','{1}','{2}')".format(method, path, type);
@@ -231,4 +232,3 @@ module.exports.GetCapabilities = function(callback ) {
 
 
 }
-
