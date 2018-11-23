@@ -104,6 +104,7 @@ CREATE TABLE `loadbalancer` (
   `healthcheck_status` int(11) NOT NULL,
   `healthcheck_path` varchar(255) NOT NULL,
   `healthcheck_active` tinyint(1) DEFAULT '0',
+  `healthcheck_interval` int(11) NOT NULL DEFAULT '30',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -120,7 +121,7 @@ CREATE TABLE `loadbalancer_routes` (
   `lbid` varchar(64) DEFAULT NULL,
   `backend` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=115 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=145 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -132,4 +133,4 @@ CREATE TABLE `loadbalancer_routes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-23 14:31:09
+-- Dump completed on 2018-11-23 18:15:38
