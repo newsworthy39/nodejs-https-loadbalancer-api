@@ -386,7 +386,7 @@ dispatcher.OnError(function(req, res) {
 	res.end("Not Found.\n");
 });
 
-dispatcher.OnGet( new RegExp("/capabilities$"), function(req, res) {
+dispatcher.OnGet( new RegExp("/loadbalancer/capabilities$"), function(req, res) {
 	try {
 		
 		api.GetCapabilities( function( result, err) {
