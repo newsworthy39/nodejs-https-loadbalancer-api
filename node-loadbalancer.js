@@ -423,6 +423,7 @@ const app = require('http').createServer(function (req, res) {
 });
 
 app.listen(PORT, () => {
+
 	// When the API boots up, it adds itself, to the api-loadbalancer ;)
 	// Context-id = 1, Loadbalancer.
 	api.AddBackendToLoadbalancer(LB, "http://{0}:{1}".format(IP ,PORT), function(result, err) {

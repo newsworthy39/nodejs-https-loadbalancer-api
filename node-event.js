@@ -143,6 +143,19 @@ dispatcher.OnPost( new RegExp("/events$"), function ( req, res) {
 
 });
 
+dispatcher.OnGet( new RegExp("/events/capabilities$"), function( req, res) {
+	try {
+		res.writeHead(200, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
+		res.end(JSON.stringify({"Capability":"Events"}));
+
+	} catch (err) {
+		res.writeHead(400, {'Content-Type': 'application/json', 'X-ServedBy': IP + ":" + PORT });
+		res.end(JSON.stringify ( {"Malformed" : err} ));
+
+	}
+
+});
+
 dispatcher.OnError(function(req, res) {
 	res.writeHead(404, {'Content-Type': 'text/plain', 'X-ServedBy': IP + ":" + PORT });
 	res.end("(node-events.js) Not Found.\n");
@@ -165,9 +178,6 @@ const app = require('http').createServer(function (req, res) {
         	console.error(err.stack || err);
 	}
 });
-
-
-var myjsonobject = { "backend":`http://${IP}:${PORT}`}
 
 // Register shutdown-function.
 var register = function(callback) {
