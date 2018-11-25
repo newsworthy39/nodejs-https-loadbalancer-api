@@ -171,6 +171,22 @@ var myjsonobject = { "backend":`http://${IP}:${PORT}`}
 
 // Register shutdown-function.
 var register = function(callback) {
+
+	/* This could be an example of the SDK, with minor-tweaks
+	context = sdk.CreateContext('test','test')
+	application = sdk.CreateApplication('https://api.clouddom.eu/events')
+	if (!sdk.ApplicationExists(application, context)) {
+		sdk.RegisterApplication(application, context);
+
+		// this a handler, thats called, when backend-termination
+		// returns 0 (ie, no backends).
+		application.DeleteWhenEmpty(true); 
+	} else {
+		backend = sdk.RegisterBackend("http://${IP}:${PORT}", application, context);
+		backend.DeleteOnTermination(true);
+	}
+	*/
+
         var payload = JSON.stringify({ "backend":`http://${IP}:${PORT}`})
 	var backend = 'https://api.clouddom.eu/loadbalancer/12/backends'
 	var options = {

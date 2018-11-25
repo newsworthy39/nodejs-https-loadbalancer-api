@@ -39,26 +39,12 @@ con.connect(function(err) {
 });
 
 
-module.exports.Register = function (module_name) {
-
-	var sql = "REPLACE INTO capabilities (MODULE_NAME) VALUES('{0}')".format(module_name)
-	con.query(sql, function(err, result, fields) {
-		if (err) throw err;
-		console.log("Number of records inserted: " + result.affectedRows);
-	});
+module.exports.Register = function (module_callback) {
 
 	return con
 }
 
-module.exports.Unregister = function (connection, module_name, callback) {
-
-
-	var sql = "DELETE FROM capabilities WHERE MODULE_NAME = '{0}'".format(module_name)
-	connection.query(sql, function(err, result, fields) {
-		
-		if (err) throw err;
-		callback(result, err);
-	});
+module.exports.Unregister = function (connection, module_callback) {
 
 	return con
 }

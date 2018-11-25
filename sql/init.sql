@@ -32,19 +32,6 @@ CREATE TABLE `authentication` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `capabilities`
---
-
-DROP TABLE IF EXISTS `capabilities`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `capabilities` (
-  `module_name` varchar(255) NOT NULL,
-  PRIMARY KEY (`module_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `context`
 --
 
@@ -121,7 +108,7 @@ CREATE TABLE `loadbalancer_routes` (
   `lbid` varchar(64) DEFAULT NULL,
   `backend` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=145 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -133,4 +120,4 @@ CREATE TABLE `loadbalancer_routes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-23 18:15:38
+-- Dump completed on 2018-11-25 11:10:10
