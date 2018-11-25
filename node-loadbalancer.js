@@ -36,9 +36,13 @@ function remove(str, chars) {
 function ncsalogger(request, response, next) {
     const { headers } = request;
 
+    function afterResponse() {
+        console.log("node-loadbalancer %s \"%s %s HTTP/%s\" %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, headers["user-agent"]);
+    }
+    response.on('finish', afterResponse);
+
     next(request, response);
     
-    console.log("node-loadbalancer %s \"%s %s HTTP/%s\" %s", headers["x-forwarded-for"], request.method, request.url, request.httpVersion, response.statusCode, headers["user-agent"]);
 }
 
 function bodyparser (request, response, next) {
